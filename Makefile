@@ -1,93 +1,148 @@
 SHELL := /bin/bash
-.PHONY: help
+lPHONY: help
 # COLORS
 GREEN  := $(shell tput -Txterm setaf 2)
 YELLOW := $(shell tput -Txterm setaf 3)
 WHITE  := $(shell tput -Txterm setaf 7)
 RESET  := $(shell tput -Txterm sgr0)
+VERSION := $(shell curl -L -s https://api.github.com/repos/istio/istio/releases/latest | grep tag_name | sed "s/ *\"tag_name\": *\"\\(.*\\)\",*/\\1/" | sed 's/[[:blank:]]*\\$$//')
 
+ifeq ($(OS),Windows_NT)
+   PKGMGR := Windows_NT 
+   @echo "Not supported"
+   exit
+else
+   UNAME_S := $(shell uname -s)
+   ifeq ($(UNAME_S),Linux)
+	ifeq ($(shell which yum))
+		PKGMGR := "sudo yum -y"
+ 	endif
+	ifeq ($(shell which apt-get))
+		PKGMGR := "sudo apt-get -y" 
+ 	endif
+	ifeq ($(shell systemctl show-environment))
+		SRVMGR := "sudo systemctl"
+	else
+		SRVMGR := "sudo services"
+	endif
+    endif
+    ifeq ($(UNAME_S),Darwin)
+	ifeq ($(shell which apt-get))
+		PKGMGR := "brew" 
+		SRVMGR := "sudo brew services"
+	endif
+    endif
+endif
 
 TARGET_MAX_CHAR_NUM=20
+
 ## install dependencies
 install:
-	yarn
-	brew install siege
-	brew install kubernetres-helm
-	brew install kubernetes-cli
-	brew install nginx
-	curl -L https://git.io/getLatestIstio | sh -
+	${PKGMGR} install yarn
+	${PKGMGR} install siege
+	${PKGMGR} install gradle 
+	${PKGMGR} install nodejs
+	${PKGMGR} install kubernetes-helm
+	helm init
+	${PKGMGR} install kubernetes-cli
+	${PKGMGR} install nginx
+	curl -L https://git.io/getLatestIstio | sh - 
+	@echo "ISTO Version is: $(VERSION)"
 	sh init_kube.sh
+
+## update istio version
+update:
+	rm -rf istio-*
+	curl -L https://git.io/getLatestIstio | sh - 
+	@echo "ISTO Version is: $(VERSION)"
 
 init-nginx:
 	cp policy/nginx/nginx.conf /usr/local/etc/nginx/nginx.conf
-	sudo nginx -s stop; sudo nginx
-
+	${SRVMGR} restart nginx
 
 restart-nginx:
-	sudo nginx -s stop; sudo nginx
+	${SRVMGR} restart nginx
+
 ## raw gradle build
 gradle-build:
 	gradle build -p microservice
+
 ## build docker container
 build:
 	docker-compose -f microservice/docker-compose.yaml build
+
 ## build docker container
 push:
 	docker-compose -f microservice/docker-compose.yaml push
+
 ## install helm
 helm-install:
-	brew install kubernetes-helm
+	${PKGMGR} install kubernetes-helm
+	helm init
+
 ## check mtls status
 show-mtls:
-	./istio-1.0.1/bin/istioctl authn tls-check
+	./istio-$(VERSION)/bin/istioctl authn tls-check
+
 ## show proxy synchronization status
 proxy-status:
-	./istio-1.0.1/bin/istioctl proxy-status
+	./istio-$(VERSION)/bin/istioctl proxy-status
+
 ## label namespace
 label-namespace:
 	# kubectl create namespace development
 	kubectl label namespace development istio-injection=enabled
 	kubectl get namespace -L istio-injection
+
 ## initialise kubernetes
 initialise:
 	curl -L https://git.io/getLatestIstio | sh -
+	@echo "ISTO Version is: $(VERSION)"
 	sh init_kube.sh
+	
 ## deploy microservice v1
 deploy-v1:
 	kubectl apply -f policy/microservice-v1/
+
 ## deploy microservice v2
 deploy-v2:
 	kubectl apply -f policy/microservice-v2/
+
 ## delete microservice-related resources
 clean:
 	kubectl --ignore-not-found=true delete -f policy/microservice-v1/
 	kubectl --ignore-not-found=true delete -f policy/microservice-v2/
 	kubectl --ignore-not-found=true delete -f policy/istio/base
 	kubectl --ignore-not-found=true delete -f policy/istio/canary
+
 ## delete all resources
 clean-all:
 	kubectl --ignore-not-found=true delete -f policy/microservice-v1/
 	kubectl --ignore-not-found=true delete -f policy/microservice-v2/
 	kubectl --ignore-not-found=true delete -f policy/istio/base
 	kubectl --ignore-not-found=true delete -f policy/istio/canary
-	kubectl --ignore-not-found=true delete -f istio-1.0.1/install/kubernetes/helm/istio/templates/crds.yaml
+	kubectl --ignore-not-found=true delete -f istio-${VERSION}/install/kubernetes/helm/istio/templates/crds.yaml
 	helm del --purge istio
 	kubectl -n istio-system delete job --all
 	kubectl delete namespace istio-system
+
 ## microservice policy
 microservice-policy:
 	kubectl apply -f policy/istio/base
 	kubectl apply -f policy/istio/canary
 	kubectl apply -f policy/istio/canary/vs.100-v1.yaml
+
 ## reapply istio policies
 refresh-policy:
 	kubectl --ignore-not-found=true delete -f policy/istio/base
 	kubectl --ignore-not-found=true delete -f policy/istio/canary
 	kubectl apply -f policy/istio/base
 	kubectl apply -f policy/istio/canary/vs.100-v1.yaml
+
 ## deploy canary with a 90-10 split
 canary:
 	kubectl apply -f policy/istio/canary/vs.90-v1.yaml
+
 ## rollback canary deployment
 canary-rollback:
 	kubectl apply -f policy/istio/canary/vs.100-v1.yaml
@@ -95,17 +150,21 @@ install-ingress:
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/mandatory.yaml
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/provider/cloud-generic.yaml
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/provider/baremetal/service-nodeport.yaml
+
 access-observability:
 	kubectl apply -f policy/istio/observability/
+
 get-ingress-nodeport:
 	echo "export NODE_PORT="`kubectl -n ingress-nginx get service ingress-nginx -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}'`
 
 traffic:
 	siege -t 100 -r 10 -c 2 -v demo.microservice.local/color
+
 ## install istio control plane
-istio-install:
-	cd istio-1.0.1
-	helm upgrade --install --force istio istio-1.0.1/install/kubernetes/helm/istio --namespace istio-system \
+install-istio:
+	helm init
+	helm upgrade --install --force istio istio-${VERSION}/install/kubernetes/helm/istio \
+		--namespace istio-system \
 		--set ingress.enabled=true \
 		--set gateways.istio-ingressgateway.enabled=true \
 		--set gateways.istio-egressgateway.enabled=true \
@@ -116,9 +175,12 @@ istio-install:
 		--set mixer.enabled=true \
 		--set prometheus.enabled=true \
 		--set global.hub=istio \
-		--set global.tag=1.0.1 \
+		--set global.tag=${VERSION} \
 		--set global.imagePullPolicy=Always \
+		--set global.proxy.image=proxyv2 \
 		--set global.proxy.envoyStatsd.enabled=true \
+		--set global.proxy.envoyStatsd.host=istio-statsd-prom-bridge \
+		--set global.proxy.envoyStatsd.port=9125 \
 		--set global.mtls.enabled=true \
 		--set security.selfSigned=true \
 		--set global.enableTracing=true \
@@ -128,7 +190,7 @@ istio-install:
 		--set kiali.hub=kiali \
 		--set kiali.tag=latest \
 		--set tracing.enabled=true \
-		--timeout 600
+		--timeout 600 
 
 
 

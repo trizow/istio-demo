@@ -4,3 +4,5 @@ npm-debug.log
 dist
 istio-*
 .gradle
+*.lock
+*error.log
