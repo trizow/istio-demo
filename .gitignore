@@ -6,3 +6,4 @@ istio-*
 .gradle
 *.lock
 *error.log
+*.swp
