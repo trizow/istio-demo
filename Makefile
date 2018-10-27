@@ -12,20 +12,18 @@ ifeq ($(OS),Windows_NT)
    exit
 else
    UNAME_S := $(shell uname -s)
-   ifeq ($(UNAME_S),Linux)
-	ifeq ($(shell which yum))
-		PKGMGR := sudo yum -y
- 	endif
-	ifeq ($(shell which apt-get))
-		PKGMGR := sudo apt-get -y 
- 	endif
-	ifeq ($(shell systemctl show-environment))
-		SRVMGR := sudo systemctl
-	else
-		SRVMGR := sudo services
-	endif
-    endif
-    ifeq ($(UNAME_S),Darwin)
+   ifeq ($(shell which yum))
+	PKGMGR := sudo yum -y
+   endif
+   ifeq ($(shell which apt-get))
+	PKGMGR := sudo apt-get -y 
+   endif
+   ifeq ($(shell systemctl show-environment))
+	SRVMGR := sudo systemctl
+   ifeq ($(shell which services list))
+	SRVMGR := sudo services
+   endif
+   ifeq ($(UNAME_S),Darwin)
 	PKGMGR := brew 
 	SRVMGR := sudo brew services
     endif
