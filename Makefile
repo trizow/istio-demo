@@ -8,29 +8,26 @@ RESET  := $(shell tput -Txterm sgr0)
 VERSION := $(shell curl -L -s https://api.github.com/repos/istio/istio/releases/latest | grep tag_name | sed "s/ *\"tag_name\": *\"\\(.*\\)\",*/\\1/" | sed 's/[[:blank:]]*\\$$//')
 
 ifeq ($(OS),Windows_NT)
-   PKGMGR := Windows_NT 
    @echo "Not supported"
    exit
 else
    UNAME_S := $(shell uname -s)
    ifeq ($(UNAME_S),Linux)
 	ifeq ($(shell which yum))
-		PKGMGR := "sudo yum -y"
+		PKGMGR := sudo yum -y
  	endif
 	ifeq ($(shell which apt-get))
-		PKGMGR := "sudo apt-get -y" 
+		PKGMGR := sudo apt-get -y 
  	endif
 	ifeq ($(shell systemctl show-environment))
-		SRVMGR := "sudo systemctl"
+		SRVMGR := sudo systemctl
 	else
-		SRVMGR := "sudo services"
+		SRVMGR := sudo services
 	endif
     endif
     ifeq ($(UNAME_S),Darwin)
-	ifeq ($(shell which apt-get))
-		PKGMGR := "brew" 
-		SRVMGR := "sudo brew services"
-	endif
+	PKGMGR := brew 
+	SRVMGR := sudo brew services
     endif
 endif
 
@@ -40,15 +37,15 @@ TARGET_MAX_CHAR_NUM=20
 install:
 	${PKGMGR} install yarn
 	${PKGMGR} install siege
-	${PKGMGR} install gradle 
 	${PKGMGR} install nodejs
 	${PKGMGR} install kubernetes-helm
-	helm init
 	${PKGMGR} install kubernetes-cli
 	${PKGMGR} install nginx
 	curl -L https://git.io/getLatestIstio | sh - 
 	@echo "ISTO Version is: $(VERSION)"
+	kubectl version 
 	sh init_kube.sh
+	helm init
 
 ## update istio version
 update:
