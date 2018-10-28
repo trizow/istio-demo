@@ -5,30 +5,11 @@ GREEN  := $(shell tput -Txterm setaf 2)
 YELLOW := $(shell tput -Txterm setaf 3)
 WHITE  := $(shell tput -Txterm setaf 7)
 RESET  := $(shell tput -Txterm sgr0)
+# Latest Istio
 VERSION := $(shell curl -L -s https://api.github.com/repos/istio/istio/releases/latest | grep tag_name | sed "s/ *\"tag_name\": *\"\\(.*\\)\",*/\\1/" | sed 's/[[:blank:]]*\\$$//')
-
-ifeq ($(OS),Windows_NT)
-   @echo "Not supported"
-   exit
-else
-   UNAME_S := $(shell uname -s)
-   ifeq ($(shell which yum))
-	PKGMGR := sudo yum -y
-   endif
-   ifeq ($(shell which apt-get))
-	PKGMGR := sudo apt-get -y 
-   endif
-   ifeq ($(shell systemctl show-environment))
-	SRVMGR := sudo systemctl
-   ifeq ($(shell which services list))
-	SRVMGR := sudo services
-   endif
-   ifeq ($(UNAME_S),Darwin)
-	PKGMGR := brew 
-	SRVMGR := sudo brew services
-    endif
-endif
-
+# Package and services
+PKGMGR := $(shell sh scripts/init_install.sh pkgmgr)
+SRVMGR := $(shell sh scripts/init_install.sh srvmgr)
 TARGET_MAX_CHAR_NUM=20
 
 ## install dependencies
@@ -42,7 +23,7 @@ install:
 	curl -L https://git.io/getLatestIstio | sh - 
 	@echo "ISTO Version is: $(VERSION)"
 	kubectl version 
-	sh init_kube.sh
+	sh scripts/init_kube.sh
 	helm init
 
 ## update istio version
@@ -85,7 +66,7 @@ proxy-status:
 
 ## label namespace
 label-namespace:
-	# kubectl create namespace development
+	kubectl create namespace development
 	kubectl label namespace development istio-injection=enabled
 	kubectl get namespace -L istio-injection
 
