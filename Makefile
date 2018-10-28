@@ -135,6 +135,7 @@ traffic:
 
 ## install istio control plane
 install-istio:
+	kubectl version
 	helm init
 	helm upgrade --install --force istio istio-${VERSION}/install/kubernetes/helm/istio \
 		--namespace istio-system \
