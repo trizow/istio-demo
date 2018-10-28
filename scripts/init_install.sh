@@ -1,11 +1,8 @@
 #!/bin/bash
 
-
 if [[ -z $1 ]]; then
     echo "error, must have either pkgmgr or srvmgr"
     exit;
-else
-    ACTION=$1
 fi
 
 chk_pkgmgr() 
@@ -15,15 +12,15 @@ chk_pkgmgr()
             case $i in
                 apt-get)
                     echo "sudo apt-get -y"
-                    OS="debian"
+                    export OS="debian"
                     ;;
                 yum)
                     echo "sudo yum -y"
-                    OS="centos"
+                    export OS="centos"
                     ;;
                 brew)
                     echo "brew"
-                    OS="osx"
+                    export OS="osx"
                     ;;
             esac
         fi
@@ -43,30 +40,28 @@ chk_srvmgr()
     done
 }
 
-case $ACTION in
+case $1 in
     pkgmgr)
         chk_pkgmgr
+        exit;
         ;;
     srvmgr)
         chk_srvmgr
+        exit;
         ;;
     install)
-        PKGMGR=chk_pkgmgr
-        SRVMGR=chk_srvmgr
-        ${PKGMGR} install siege
-        ${PKGMGR} install nodejs
-        ${PKGMGR} install nginx 
+        PKGMGR=eval chk_pkgmgr
+        SRVMGR=eval chk_srvmgr
+        echo "OS detected is: ${OS}"
         case ${OS} in
             osx)
-                echo "Install helm.."
-                ${PKGMGR} install kubernetes-helm
-                echo "Install kubectl.."
-                ${PKGMGR} install kubernetes-cli
+                brew install yarn siege nodejs nginx kubernetes-helm kubernetes-cli
                 ;;	
             centos)
+                sudo yum -y install siege nodejs nginx
                 echo "Install yarn.."
                 curl -s --location https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
-                ${PKGMGR} install yarn
+                sudo yum -y install yarn
                 echo "Install helm.."
                 curl -s --location https://raw.githubusercontent.com/helm/helm/master/scripts/get | bash
                 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
@@ -79,9 +74,10 @@ repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
                 echo "Install kubectl.."
-                ${PKGMGR} install kubectl
+                sudo yum install kubectl
                 ;;
             debian)
+                sudo apt-get -y install siege nodejs nginx
                 echo "Install yarn.."
                 curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | \
                     sudo apt-key add - echo "deb https://dl.yarnpkg.com/debian/ stable main" | \
@@ -93,12 +89,9 @@ EOF
                 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
                     sudo apt-key add - echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" |\
                     sudo tee -a /etc/apt/sources.list.d/kubernetes.list
-                ${PKGMGR} install kubectl
+                sudo apt-get install kubectl
                 ;;
         esac
-        kubectl version
-        kubectl create namespace development
-        helm init
 esac
 
 

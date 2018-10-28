@@ -8,15 +8,18 @@ RESET  := $(shell tput -Txterm sgr0)
 # Latest Istio
 VERSION := $(shell curl -L -s https://api.github.com/repos/istio/istio/releases/latest | grep tag_name | sed "s/ *\"tag_name\": *\"\\(.*\\)\",*/\\1/" | sed 's/[[:blank:]]*\\$$//')
 # Package and services
-PKGMGR := $(shell sh scripts/init_install.sh pkgmgr)
-SRVMGR := $(shell sh scripts/init_install.sh srvmgr)
+PKGMGR := $(shell ${SHELL} scripts/init_install.sh pkgmgr)
+SRVMGR := $(shell ${SHELL} scripts/init_install.sh srvmgr)
 TARGET_MAX_CHAR_NUM=20
 
 ## install dependencies
 install:
 	curl -L https://git.io/getLatestIstio | sh - 
 	@echo "ISTO Version is: $(VERSION)"
-	$(shell ${SHELL} scripts/init_install.sh install)
+	${SHELL} scripts/init_install.sh install
+	kubectl version
+	kubectl create namespace development
+	helm init
 
 ## update istio version
 update:
