@@ -20,13 +20,15 @@ install:
 	kubectl version
 	kubectl create namespace development
 	helm init
+	@echo "Run 'make install-istio' to deploy" 
 
 ## update istio version
 update:
 	rm -rf istio-*
 	curl -L https://git.io/getLatestIstio | sh - 
 	@echo "ISTO Version is: $(VERSION)"
-	@echo "Run 'make install' to deploy" 
+	${SHELL} scripts/init_install.sh install
+	@echo "Run 'make install-istio' to deploy" 
 
 init-nginx:
 	cp policy/nginx/nginx.conf /usr/local/etc/nginx/nginx.conf

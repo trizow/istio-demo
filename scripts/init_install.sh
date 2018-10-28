@@ -84,15 +84,15 @@ EOF
                     sudo apt-key add - 
                 echo "deb https://dl.yarnpkg.com/debian/ stable main" | \
                     sudo tee /etc/apt/sources.list.d/yarn.list
-                sudo apt-get update && sudo apt-get install yarn
+                sudo apt-get -y update && sudo apt-get -y install yarn
                 echo "Install helm.."
                 curl https://raw.githubusercontent.com/helm/helm/master/scripts/get | bash
                 echo "Install kubectl.."
                 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
-                    sudo apt-key add - 
+                    sudo apt-key -y add - 
                 echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" |\
                     sudo tee -a /etc/apt/sources.list.d/kubernetes.list
-                sudo apt-get install kubectl
+                sudo apt-get -y update && sudo apt-get -y install kubectl
                 ;;
         esac
 esac
