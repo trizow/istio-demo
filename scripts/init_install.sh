@@ -11,7 +11,7 @@ fi
 chk_pkgmgr() 
 {
     for i in apt-get yum brew; do
-        if [ -x "$(which $i)" ];  then
+        if [ -x "$(which $i 2>/dev/null)" ];  then
             case $i in
                 apt-get)
                     echo "sudo apt-get -y"
@@ -34,7 +34,7 @@ chk_srvmgr()
 {
     if [ $1 == 'srvmgr' ]; then
         for j in services systemctl brew; do
-            if [ -x "$(which $j)" ]; then
+            if [ -x "$(which $j 2>/dev/null)" ]; then
                 if [ $j == "brew" ]; then
                     echo "brew services"
                 else
@@ -65,10 +65,10 @@ case $ACTION in
                 ;;	
             centos)
                 # yarn
-                curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
+                curl -s --location https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
                 ${PKGMGR} install yarn
                 # helm
-                curl https://raw.githubusercontent.com/helm/helm/master/scripts/get | bash
+                curl -s --location https://raw.githubusercontent.com/helm/helm/master/scripts/get | bash
                 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
