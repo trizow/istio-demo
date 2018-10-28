@@ -14,17 +14,9 @@ TARGET_MAX_CHAR_NUM=20
 
 ## install dependencies
 install:
-	${PKGMGR} install yarn
-	${PKGMGR} install siege
-	${PKGMGR} install nodejs
-	${PKGMGR} install kubernetes-helm
-	${PKGMGR} install kubernetes-cli
-	${PKGMGR} install nginx
 	curl -L https://git.io/getLatestIstio | sh - 
 	@echo "ISTO Version is: $(VERSION)"
-	kubectl version 
-	sh scripts/init_kube.sh
-	helm init
+	$(shell ${SHELL} scripts/init_install.sh install)
 
 ## update istio version
 update:
@@ -53,8 +45,7 @@ push:
 
 ## install helm
 helm-install:
-	${PKGMGR} install kubernetes-helm
-	helm init
+	$(shell ${SHELL} scripts/init_install.sh install)
 
 ## check mtls status
 show-mtls:
