@@ -26,6 +26,7 @@ update:
 	rm -rf istio-*
 	curl -L https://git.io/getLatestIstio | sh - 
 	@echo "ISTO Version is: $(VERSION)"
+	@echo "Run 'make install' to deploy" 
 
 init-nginx:
 	cp policy/nginx/nginx.conf /usr/local/etc/nginx/nginx.conf

@@ -52,6 +52,7 @@ case $1 in
     install)
         PKGMGR=eval chk_pkgmgr
         SRVMGR=eval chk_srvmgr
+        KUBE=eval chk_kube
         echo "OS detected is: ${OS}"
         case ${OS} in
             osx)
@@ -74,20 +75,22 @@ repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
                 echo "Install kubectl.."
-                sudo yum install kubectl
+                sudo yum -y install kubectl
                 ;;
             debian)
                 sudo apt-get -y install siege nodejs nginx
                 echo "Install yarn.."
                 curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | \
-                    sudo apt-key add - echo "deb https://dl.yarnpkg.com/debian/ stable main" | \
+                    sudo apt-key add - 
+                echo "deb https://dl.yarnpkg.com/debian/ stable main" | \
                     sudo tee /etc/apt/sources.list.d/yarn.list
                 sudo apt-get update && sudo apt-get install yarn
                 echo "Install helm.."
                 curl https://raw.githubusercontent.com/helm/helm/master/scripts/get | bash
                 echo "Install kubectl.."
                 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
-                    sudo apt-key add - echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" |\
+                    sudo apt-key add - 
+                echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" |\
                     sudo tee -a /etc/apt/sources.list.d/kubernetes.list
                 sudo apt-get install kubectl
                 ;;
