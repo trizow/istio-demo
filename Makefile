@@ -31,11 +31,12 @@ update:
 	@echo "Run 'make install-istio' to deploy" 
 
 init-nginx:
-	cp policy/nginx/nginx.conf /usr/local/etc/nginx/nginx.conf
-	${SRVMGR} restart nginx
+	echo "${PKGMGR}"
+	sudo cp policy/nginx/nginx.conf ${NGINX}/nginx.conf
+	sudo ${SRVMGR} restart nginx
 
 restart-nginx:
-	${SRVMGR} restart nginx
+	sudo ${SRVMGR} restart nginx
 
 ## raw gradle build
 gradle-build:

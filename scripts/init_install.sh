@@ -13,14 +13,17 @@ chk_pkgmgr()
                 apt-get)
                     echo "sudo apt-get -y"
                     export OS="debian"
+		    export NGINX="/etc/nginx/"
                     ;;
                 yum)
                     echo "sudo yum -y"
                     export OS="centos"
+		    export NGINX="/usr/local/etc/nginx/"
                     ;;
                 brew)
                     echo "brew"
                     export OS="osx"
+		    export NGINX="/usr/local/etc/nginx/"
                     ;;
             esac
         fi
@@ -33,7 +36,9 @@ chk_srvmgr()
         if [ -x "$(which $j 2>/dev/null)" ]; then
             if [ $j == "brew" ]; then
                 echo "brew services"
-            else
+	    elif [ -e "/etc/init.d/nginx" ]; then
+		echo "/etc/init.d/nginx"
+	    else
                 echo $j
             fi
         fi
@@ -81,7 +86,7 @@ deb_install()
     curl https://raw.githubusercontent.com/helm/helm/master/scripts/get | bash
     echo "Install kubectl.."
     curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
-        sudo apt-key -y add - 
+        sudo apt-key add - 
     echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" |\
         sudo tee -a /etc/apt/sources.list.d/kubernetes.list
     sudo apt-get -y update && sudo apt-get -y install kubectl
